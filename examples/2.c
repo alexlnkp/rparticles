@@ -6,18 +6,20 @@
 #define RPARTICLES_IMPLEMENTATION
 #include "rparticles.h"
 
+#include "rlcfg.h"
+
 void drawXparticle(Particle* p) {
     DrawSphere(p->pos, 5.0f, p->color);
 }
 
 int main(void) {
     srand(time(NULL));
-    InitWindow(1280, 720, "particle system");
+    InitWindow(TARGET_WINDOW_WIDTH, TARGET_WINDOW_HEIGHT, "particle system");
 
-    SetTargetFPS(165);
+    SetTargetFPS(TARGET_FPS);
     SetExitKey(KEY_NULL);
 
-    Emitter pe = InitParticleEmitter(100, 0.02f,
+    Emitter pe = InitParticleEmitter(MAX_PARTICLES, EMITTER_INTERVAL,
         (Vector3Range) { /* positionRange */
             .lowerBound = { .x = -400, .y = -100, .z = -200 },
             .upperBound = { .x = 400, .y = 200, .z = 520 }
