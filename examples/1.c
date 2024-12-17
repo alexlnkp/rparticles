@@ -11,6 +11,11 @@ void drawXparticle(Particle* p) {
     DrawCircle(p->pos.x, p->pos.y, 10.0f, p->color);
 }
 
+void particleXdied(Particle* p, Emitter* pg) { /* :( */
+    (void)(pg);
+    TraceLog(LOG_INFO, "Particle died at (%f; %f; %f)", p->pos.x, p->pos.y, p->pos.z);
+}
+
 int main(void) {
     srand(time(NULL));
     InitWindow(TARGET_WINDOW_WIDTH, TARGET_WINDOW_HEIGHT, "particle system");
@@ -18,20 +23,22 @@ int main(void) {
     SetTargetFPS(TARGET_FPS);
     SetExitKey(KEY_NULL);
 
-    Emitter pe = InitParticleEmitter(MAX_PARTICLES, EMITTER_INTERVAL,
-        (Vector3Range) { /* positionRange */
+    EmitterOptions pe_opt = {
+        .positionRange = (Vector3Range) {
             .lowerBound = { .x = 400, .y = 200, .z = 0 },
             .upperBound = { .x = 680, .y = 520, .z = 0 }
         },
-        (Vector3Range) { /* velocityRange */
+        .velocityRange = (Vector3Range) {
             .lowerBound = { .x = -100.0f, .y = -100.0f, .z = 0 },
             .upperBound = { .x = 100.0f, .y = 100.0f, .z = 0 }
         },
-        (FloatRange) { .lowerBound = 1.5f, .upperBound = 5.0f }, /* lifespanRange */
-        (ColorRange) { .lowerBound = RED, .upperBound = BLUE }, /* colorRange */
+        .lifespanRange = (FloatRange) { .lowerBound = 1.5f, .upperBound = 5.0f },
+        .colorRange = (ColorRange) { .lowerBound = RED, .upperBound = BLUE },
+    };
 
+    Emitter pe = InitParticleEmitter(MAX_PARTICLES, EMITTER_INTERVAL, pe_opt,
         drawXparticle, /* drawFunction */
-        NULL /* onDeathFunction (WIP) */
+        particleXdied /* onDeathFunction (WIP) */
     );
 
     while (!WindowShouldClose()) {

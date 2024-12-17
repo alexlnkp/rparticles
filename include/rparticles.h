@@ -52,8 +52,15 @@ typedef struct Emitter {
     float timeSinceLastSpawn;
 
     void (*drawFunction)(Particle*); /* called when particle wants to be rendered */
-    void (*particleOnDeath)(Particle*, struct Emitter*); /* called when particle's age is greater than its lifespan (WIP) */
+    void (*particleOnDeath)(Particle*, struct Emitter*); /* called when particle's age is greater than its lifespan */
 } Emitter;
+
+typedef struct EmitterOptions {
+    Vector3Range positionRange; /* position range in which particles will spawn randomly */
+    Vector3Range velocityRange; /* velocity range which each particle will have */
+    FloatRange lifespanRange; /* lifespan range which dictates duration of a particle's life */
+    ColorRange colorRange; /* color range in which a particle may be colored as */
+} EmitterOptions;
 
 float RandomFloatRange(float min, float max);
 int RandomIntRange(int min, int max);
@@ -65,10 +72,7 @@ void DefaultParticleOnDeath(Particle* p, Emitter* generator);
 Emitter InitParticleEmitter(
     int maxParticles,
     float spawnInterval,
-    Vector3Range positionRange,
-    Vector3Range velocityRange,
-    FloatRange lifespanRange,
-    ColorRange colorRange,
+    EmitterOptions pe_opt,
     void (*drawFunction)(Particle*),
     void (*particleDeathFunction)(Particle*, Emitter*));
 
@@ -142,10 +146,7 @@ void DefaultParticleOnDeath(Particle* p, Emitter* generator) {
 Emitter InitParticleEmitter(
     int maxParticles,
     float spawnInterval,
-    Vector3Range positionRange,
-    Vector3Range velocityRange,
-    FloatRange lifespanRange,
-    ColorRange colorRange,
+    EmitterOptions pe_opt,
     void (*drawFunction)(Particle*),
     void (*particleDeathFunction)(Particle*, Emitter*)) {
 
@@ -158,10 +159,10 @@ Emitter InitParticleEmitter(
     emitter.drawFunction = (drawFunction) ? drawFunction : DefaultDrawParticle;
     emitter.particleOnDeath = (particleDeathFunction) ? particleDeathFunction : DefaultParticleOnDeath;
 
-    emitter.positionRange = positionRange;
-    emitter.velocityRange = velocityRange;
-    emitter.lifespanRange = lifespanRange;
-    emitter.colorRange = colorRange;
+    emitter.positionRange = pe_opt.positionRange;
+    emitter.velocityRange = pe_opt.velocityRange;
+    emitter.lifespanRange = pe_opt.lifespanRange;
+    emitter.colorRange = pe_opt.colorRange;
 
     return emitter;
 }
