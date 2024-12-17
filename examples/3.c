@@ -1,3 +1,4 @@
+#include <math.h>
 #include <time.h>
 
 #include <raylib.h>
@@ -19,6 +20,15 @@ void particleXdied(Particle* p, Emitter* pg) { /* :( */
     TraceLog(LOG_INFO, "PENGER DIED!! at (%f; %f; %f)", p->pos.x, p->pos.y, p->pos.z);
 }
 
+void updateXparticle(Particle* p, float deltaTime) {
+    static float ctr = 0.0f;
+
+    p->pos.x += sinf(p->vel.x + ctr * deltaTime);
+    p->pos.y += cosf(p->vel.y + ctr * deltaTime);
+
+    ctr += 0.01f;
+}
+
 int main(void) {
     srand(time(NULL));
     InitWindow(TARGET_WINDOW_WIDTH, TARGET_WINDOW_HEIGHT, "particle system");
@@ -37,10 +47,11 @@ int main(void) {
             .lowerBound = { .x = -100.0f, .y = -100.0f, .z = 0 },
             .upperBound = { .x = 100.0f, .y = 100.0f, .z = 0 }
         },
-        .lifespanRange = (FloatRange) { .lowerBound = 1.5f, .upperBound = 5.0f },
+        .lifespanRange = (FloatRange) { .lowerBound = 15.0f, .upperBound = 15.0f },
         .colorRange = (ColorRange) { .lowerBound = RED, .upperBound = BLUE },
         .drawFunction = drawXparticle,
-        .deathFunction = particleXdied
+        .deathFunction = particleXdied,
+        .updateFunction = updateXparticle
     };
 
     Emitter pe = InitParticleEmitter(MAX_PARTICLES, EMITTER_INTERVAL, pe_opt);

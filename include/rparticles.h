@@ -52,6 +52,7 @@ struct EmitterOptions {
     ColorRange colorRange;                      /* color range in which a particle may be colored as         */
     void (*drawFunction)(Particle*);            /* called when particle wants to be rendered                 */
     void (*deathFunction)(Particle*, Emitter*); /* called when particle's age is greater than its lifespan   */
+    void (*updateFunction)(Particle*, float);   /* called when particle needs to be updated */
 };
 
 struct Emitter {
@@ -69,8 +70,10 @@ float RandomFloatRange(float min, float max);
 int RandomIntRange(int min, int max);
 Color GetRandomColorInRange(ColorRange cr);
 Vector3 GetRandomVector3InRange(Vector3Range v3r);
-void DefaultDrawParticle(Particle* p);
+
+void DefaultParticleDraw(Particle* p);
 void DefaultParticleOnDeath(Particle* p, Emitter* generator);
+void DefaultParticleUpdate(Particle* p, float deltaTime);
 
 Emitter InitParticleEmitter(int maxParticles, float spawnInterval, EmitterOptions pe_opt);
 
@@ -124,7 +127,7 @@ Vector3 GetRandomVector3InRange(Vector3Range v3r) {
 }
 
 
-void DefaultDrawParticle(Particle* p) {
+void DefaultParticleDraw(Particle* p) {
     DrawRectangle(p->pos.x, p->pos.y, 15.0f, 15.0f, p->color);
 }
 
@@ -143,7 +146,11 @@ Emitter InitParticleEmitter(int maxParticles, float spawnInterval, EmitterOption
     emitter.maxNumParticles = maxParticles;
     emitter.particleSpawnInterval = spawnInterval;
     emitter.timeSinceLastSpawn = 0.0f;
+
     emitter.options = pe_opt;
+    emitter.options.deathFunction  = (pe_opt.deathFunction) ? pe_opt.deathFunction  : DefaultParticleOnDeath;
+    emitter.options.drawFunction   = (pe_opt.drawFunction)  ? pe_opt.drawFunction   : DefaultParticleDraw;
+    emitter.options.updateFunction =  pe_opt.updateFunction ? pe_opt.updateFunction : DefaultParticleUpdate;
 
     return emitter;
 }
@@ -159,6 +166,13 @@ void InitParticle(Particle* p, Vector3Range posRange, Vector3Range velRange, Flo
 }
 
 
+void DefaultParticleUpdate(Particle* p, float deltaTime) {
+    p->pos.x += p->vel.x * deltaTime;
+    p->pos.y += p->vel.y * deltaTime;
+    p->pos.z += p->vel.z * deltaTime;
+}
+
+
 void UpdateParticleEmitter(Emitter* emitter, float deltaTime) {
     emitter->timeSinceLastSpawn += deltaTime;
 
@@ -166,9 +180,7 @@ void UpdateParticleEmitter(Emitter* emitter, float deltaTime) {
         Particle* p = &emitter->particles[i];
         if (p->age < p->lifespan) {
             p->age += deltaTime;
-            p->pos.x += p->vel.x * deltaTime;
-            p->pos.y += p->vel.y * deltaTime;
-            p->pos.z += p->vel.z * deltaTime;
+            emitter->options.updateFunction(p, deltaTime);
         } else {
             emitter->options.deathFunction(p, emitter);
 

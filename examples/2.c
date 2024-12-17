@@ -36,7 +36,8 @@ int main(void) {
         .lifespanRange = (FloatRange) { .lowerBound = 1.5f, .upperBound = 5.0f },
         .colorRange = (ColorRange) { .lowerBound = RED, .upperBound = BLUE },
         .drawFunction = drawXparticle,
-        .deathFunction = particleXdied
+        .deathFunction = particleXdied,
+        .updateFunction = NULL
     };
 
     Emitter pe = InitParticleEmitter(MAX_PARTICLES, EMITTER_INTERVAL, pe_opt);

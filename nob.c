@@ -27,7 +27,7 @@ void build_examples(Nob_Cmd* cmd) {
         nob_cmd_append(cmd, source_path);
 
         nob_cmd_append(cmd, "-Iinclude", "-I.");
-        nob_cmd_append(cmd, "-lraylib");
+        nob_cmd_append(cmd, "-lraylib", "-lm");
         nob_cmd_run_sync_and_reset(cmd);
     }
 }
