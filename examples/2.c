@@ -34,13 +34,12 @@ int main(void) {
             .upperBound = { .x =  100.0f, .y =  100.0f, .z =  100.0f }
         },
         .lifespanRange = (FloatRange) { .lowerBound = 1.5f, .upperBound = 5.0f },
-        .colorRange = (ColorRange) { .lowerBound = RED, .upperBound = BLUE }
+        .colorRange = (ColorRange) { .lowerBound = RED, .upperBound = BLUE },
+        .drawFunction = drawXparticle,
+        .deathFunction = particleXdied
     };
 
-    Emitter pe = InitParticleEmitter(MAX_PARTICLES, EMITTER_INTERVAL, pe_opt,
-        drawXparticle, /* drawFunction */
-        particleXdied /* onDeathFunction (WIP) */
-    );
+    Emitter pe = InitParticleEmitter(MAX_PARTICLES, EMITTER_INTERVAL, pe_opt);
 
     Camera3D cam = {0};
     cam.fovy = 90.0f;

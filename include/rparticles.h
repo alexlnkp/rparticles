@@ -15,34 +15,47 @@
     #include <raylib.h>
 #endif
 
-typedef struct FloatRange {
+typedef struct EmitterOptions EmitterOptions;
+typedef struct Emitter Emitter;
+typedef struct Particle Particle;
+typedef struct ColorRange ColorRange;
+typedef struct Vector3Range Vector3Range;
+typedef struct FloatRange FloatRange;
+
+struct FloatRange {
     float lowerBound;
     float upperBound;
-} FloatRange;
+};
 
-typedef struct Vector3Range {
+struct Vector3Range {
     Vector3 lowerBound;
     Vector3 upperBound;
-} Vector3Range;
+};
 
-typedef struct ColorRange {
+struct ColorRange {
     Color lowerBound;
     Color upperBound;
-} ColorRange;
+};
 
-typedef struct Particle {
-    Vector3 pos;
-    Vector3 vel;
-    float lifespan;
-    float age;
-    Color color;
-} Particle;
+struct Particle {
+    Vector3 pos;    /* particle's position    */
+    Vector3 vel;    /* particle's velocity    */
+    float lifespan; /* particle's lifespan    */
+    float age;      /* particle's current age */
+    Color color;    /* particle's color       */
+};
 
-typedef struct Emitter {
-    Vector3Range positionRange;
-    Vector3Range velocityRange;
-    FloatRange lifespanRange;
-    ColorRange colorRange;
+struct EmitterOptions {
+    Vector3Range positionRange;                 /* position range in which particles will spawn randomly     */
+    Vector3Range velocityRange;                 /* velocity range which each particle will have              */
+    FloatRange lifespanRange;                   /* lifespan range which dictates particle's duration of life */
+    ColorRange colorRange;                      /* color range in which a particle may be colored as         */
+    void (*drawFunction)(Particle*);            /* called when particle wants to be rendered                 */
+    void (*deathFunction)(Particle*, Emitter*); /* called when particle's age is greater than its lifespan   */
+};
+
+struct Emitter {
+    EmitterOptions options;
 
     Particle* particles;
     int numParticles;
@@ -50,17 +63,7 @@ typedef struct Emitter {
 
     float particleSpawnInterval;
     float timeSinceLastSpawn;
-
-    void (*drawFunction)(Particle*); /* called when particle wants to be rendered */
-    void (*particleOnDeath)(Particle*, struct Emitter*); /* called when particle's age is greater than its lifespan */
-} Emitter;
-
-typedef struct EmitterOptions {
-    Vector3Range positionRange; /* position range in which particles will spawn randomly */
-    Vector3Range velocityRange; /* velocity range which each particle will have */
-    FloatRange lifespanRange; /* lifespan range which dictates duration of a particle's life */
-    ColorRange colorRange; /* color range in which a particle may be colored as */
-} EmitterOptions;
+};
 
 float RandomFloatRange(float min, float max);
 int RandomIntRange(int min, int max);
@@ -69,19 +72,9 @@ Vector3 GetRandomVector3InRange(Vector3Range v3r);
 void DefaultDrawParticle(Particle* p);
 void DefaultParticleOnDeath(Particle* p, Emitter* generator);
 
-Emitter InitParticleEmitter(
-    int maxParticles,
-    float spawnInterval,
-    EmitterOptions pe_opt,
-    void (*drawFunction)(Particle*),
-    void (*particleDeathFunction)(Particle*, Emitter*));
+Emitter InitParticleEmitter(int maxParticles, float spawnInterval, EmitterOptions pe_opt);
 
-void InitParticle(
-    Particle* p,
-    Vector3Range posRange,
-    Vector3Range velRange,
-    FloatRange lifespanRange,
-    ColorRange colorRange);
+void InitParticle(Particle* p, Vector3Range posRange, Vector3Range velRange, FloatRange lifespanRange, ColorRange colorRange);
 
 void UpdateParticleEmitter(Emitter* emitter, float deltaTime);
 void RenderParticles(const Emitter* emitter);
@@ -136,33 +129,21 @@ void DefaultDrawParticle(Particle* p) {
 }
 
 
-void DefaultParticleOnDeath(Particle* p, Emitter* generator) {
+void DefaultParticleOnDeath(Particle* p, Emitter* emitter) {
     /* TODO: finish this */
     (void)(p);
-    (void)(generator);
+    (void)(emitter);
 }
 
 
-Emitter InitParticleEmitter(
-    int maxParticles,
-    float spawnInterval,
-    EmitterOptions pe_opt,
-    void (*drawFunction)(Particle*),
-    void (*particleDeathFunction)(Particle*, Emitter*)) {
-
-    Emitter emitter;
+Emitter InitParticleEmitter(int maxParticles, float spawnInterval, EmitterOptions pe_opt) {
+    Emitter emitter = {0};
     emitter.particles = (Particle*)RL_MALLOC(maxParticles * sizeof(Particle));
     emitter.numParticles = 0;
     emitter.maxNumParticles = maxParticles;
     emitter.particleSpawnInterval = spawnInterval;
     emitter.timeSinceLastSpawn = 0.0f;
-    emitter.drawFunction = (drawFunction) ? drawFunction : DefaultDrawParticle;
-    emitter.particleOnDeath = (particleDeathFunction) ? particleDeathFunction : DefaultParticleOnDeath;
-
-    emitter.positionRange = pe_opt.positionRange;
-    emitter.velocityRange = pe_opt.velocityRange;
-    emitter.lifespanRange = pe_opt.lifespanRange;
-    emitter.colorRange = pe_opt.colorRange;
+    emitter.options = pe_opt;
 
     return emitter;
 }
@@ -189,7 +170,7 @@ void UpdateParticleEmitter(Emitter* emitter, float deltaTime) {
             p->pos.y += p->vel.y * deltaTime;
             p->pos.z += p->vel.z * deltaTime;
         } else {
-            emitter->particleOnDeath(p, emitter);
+            emitter->options.deathFunction(p, emitter);
 
             if (i < emitter->numParticles - 1) {
                 emitter->particles[i] = emitter->particles[emitter->numParticles - 1];
@@ -202,7 +183,10 @@ void UpdateParticleEmitter(Emitter* emitter, float deltaTime) {
     while (emitter->timeSinceLastSpawn >= emitter->particleSpawnInterval) {
         if (emitter->numParticles < emitter->maxNumParticles) {
             InitParticle(&emitter->particles[emitter->numParticles],
-                emitter->positionRange, emitter->velocityRange, emitter->lifespanRange, emitter->colorRange);
+                          emitter->options.positionRange,
+                          emitter->options.velocityRange,
+                          emitter->options.lifespanRange,
+                          emitter->options.colorRange);
             emitter->numParticles++;
         }
         emitter->timeSinceLastSpawn -= emitter->particleSpawnInterval;
@@ -214,7 +198,7 @@ void RenderParticles(const Emitter* emitter) {
     for (int i = 0; i < emitter->numParticles; i++) {
         Particle* p = &emitter->particles[i];
         if (p->age < p->lifespan) {
-            emitter->drawFunction(p);
+            emitter->options.drawFunction(p);
         }
     }
 }

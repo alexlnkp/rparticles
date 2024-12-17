@@ -34,12 +34,11 @@ int main(void) {
         },
         .lifespanRange = (FloatRange) { .lowerBound = 1.5f, .upperBound = 5.0f },
         .colorRange = (ColorRange) { .lowerBound = RED, .upperBound = BLUE },
+        .drawFunction = drawXparticle,
+        .deathFunction = particleXdied
     };
 
-    Emitter pe = InitParticleEmitter(MAX_PARTICLES, EMITTER_INTERVAL, pe_opt,
-        drawXparticle, /* drawFunction */
-        particleXdied /* onDeathFunction (WIP) */
-    );
+    Emitter pe = InitParticleEmitter(MAX_PARTICLES, EMITTER_INTERVAL, pe_opt);
 
     while (!WindowShouldClose()) {
         float deltaTime = GetFrameTime();
