@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <time.h>
 
 #include <raylib.h>
@@ -16,7 +17,7 @@ int main(void) {
     SetTargetFPS(165);
     SetExitKey(KEY_NULL);
 
-    ParticleGenerator pg = InitParticleGenerator(100, 0.02f,
+    Emitter pe = InitParticleEmitter(100, 0.02f,
         (Vector3Range) { /* positionRange */
             .lowerBound = { .x = -400, .y = -100, .z = -200 },
             .upperBound = { .x = 400, .y = 200, .z = 520 }
@@ -41,23 +42,23 @@ int main(void) {
 
     while (!WindowShouldClose()) {
         float deltaTime = GetFrameTime();
-        UpdateParticleGenerator(&pg, deltaTime);
+        UpdateParticleEmitter(&pe, deltaTime);
         UpdateCamera(&cam, CAMERA_FREE);
 
         BeginDrawing(); {
             ClearBackground(RAYWHITE);
             BeginMode3D(cam); {
                 DrawGrid(1000, 1.0f);
-                RenderParticles(&pg);
+                RenderParticles(&pe);
 
             } EndMode3D();
-            DrawText(TextFormat("particles: %d", pg.numParticles), 0, 0, 24, BLACK);
+            DrawText(TextFormat("particles: %d", pe.numParticles), 0, 0, 24, BLACK);
         } EndDrawing();
     }
 
     EnableCursor();
 
-    DestroyParticleGenerator(&pg);
+    DestroyParticleEmitter(&pe);
     CloseWindow();
 
     return 0;

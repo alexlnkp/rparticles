@@ -16,7 +16,7 @@ int main(void) {
     SetTargetFPS(165);
     SetExitKey(KEY_NULL);
 
-    ParticleGenerator pg = InitParticleGenerator(100, 0.1f,
+    Emitter pe = InitParticleEmitter(100, 0.1f,
         (Vector3Range) { /* positionRange */
             .lowerBound = { .x = 400, .y = 200, .z = 0 },
             .upperBound = { .x = 680, .y = 520, .z = 0 }
@@ -34,17 +34,17 @@ int main(void) {
 
     while (!WindowShouldClose()) {
         float deltaTime = GetFrameTime();
-        UpdateParticleGenerator(&pg, deltaTime);
+        UpdateParticleEmitter(&pe, deltaTime);
 
         BeginDrawing(); {
             ClearBackground(BLACK);
-            RenderParticles(&pg);
+            RenderParticles(&pe);
 
-            DrawText(TextFormat("particles: %d", pg.numParticles), 0, 0, 24, WHITE);
+            DrawText(TextFormat("particles: %d", pe.numParticles), 0, 0, 24, WHITE);
         } EndDrawing();
     }
 
-    DestroyParticleGenerator(&pg);
+    DestroyParticleEmitter(&pe);
     CloseWindow();
 
     return 0;
