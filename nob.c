@@ -1,9 +1,11 @@
 #define NOB_IMPLEMENTATION
 #include "nob.h"
 
+#include "rlcfg.h"
+
 #define STR_OR_DEFAULT(str, def) ((str) ? (str) : (def))
 
-#define NUM_EXAMPLES 2
+#define NUM_EXAMPLES 3
 
 #define DEFAULT_CC "gcc"
 
@@ -34,6 +36,14 @@ int main(int argc, char* argv[]) {
     NOB_GO_REBUILD_URSELF(argc, argv);
 
     Nob_Cmd cmd = {0};
+
+    if (!nob_file_exists(PENGER_IMAGE_PATH)) {
+        /* download penger. NOW */
+        nob_cmd_append(&cmd, "wget");
+        nob_cmd_append(&cmd, "-O", PENGER_IMAGE_PATH);
+        nob_cmd_append(&cmd, "https://penger.city/museum/pengers/Penger.png");
+        nob_cmd_run_sync_and_reset(&cmd);
+    }
 
     nob_mkdir_if_not_exists("out");
     build_examples(&cmd);
