@@ -8,6 +8,8 @@
 
 #include "rlcfg.h"
 
+#define GRAVITY 981.0f
+
 Texture2D penger;
 
 void drawXparticle(Particle* p) {
@@ -18,6 +20,14 @@ void drawXparticle(Particle* p) {
 void particleXdied(Particle* p, Emitter* pg) { /* :( */
     (void)(pg);
     (void)(p);
+}
+
+void particleXupdate(Particle* p, float deltaTime) {
+    p->pos.x += p->vel.x * deltaTime;
+    p->pos.y += p->vel.y * deltaTime;
+    p->pos.z += p->vel.z * deltaTime;
+
+    p->vel.y += GRAVITY * deltaTime;
 }
 
 int main(void) {
@@ -40,14 +50,14 @@ int main(void) {
         },
         .velocityRange = (Vector3Range) {
             .lowerBound = { .x = -1000.0f, .y = -1000.0f, .z = 0 },
-            .upperBound = { .x = 1000.0f, .y = 1000.0f, .z = 0 }
+            .upperBound = { .x = 1000.0f, .y = 250.0f, .z = 0 }
         },
         .lifespanRange = (FloatRange) { .lowerBound = 15.0f, .upperBound = 15.0f },
         .colorRange = (ColorRange) { .lowerBound = RED, .upperBound = BLUE },
         .burstRange = (IntRange) { 500, 10000 },
         .drawFunction = drawXparticle,
         .deathFunction = particleXdied,
-        .updateFunction = NULL
+        .updateFunction = particleXupdate
     };
 
     Emitter pe = InitParticleEmitter(ET_BURST, 10000, 0.0001f, pe_opt);
