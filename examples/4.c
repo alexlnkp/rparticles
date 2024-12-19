@@ -29,20 +29,49 @@ int main(void) {
             .upperBound = { .x = 680, .y = 520, .z = 0 }
         },
         .velocityRange = (Vector3Range) {
-            .lowerBound = { .x = -100.0f, .y = -100.0f, .z = 0 },
-            .upperBound = { .x = 100.0f, .y = 100.0f, .z = 0 }
+            .lowerBound = { .x = -300.0f, .y = -300.0f, .z = 0 },
+            .upperBound = { .x = 300.0f, .y = 300.0f, .z = 0 }
         },
         .lifespanRange = (FloatRange) { .lowerBound = 1.5f, .upperBound = 5.0f },
         .colorRange = (ColorRange) { .lowerBound = RED, .upperBound = BLUE },
+        .burstRange = (IntRange){5, 10},
         .drawFunction = drawXparticle,
         .deathFunction = particleXdied,
         .updateFunction = NULL
     };
 
-    Emitter pe = InitParticleEmitter(ET_CONSTANT, MAX_PARTICLES, EMITTER_INTERVAL, pe_opt);
+    Emitter pe = InitParticleEmitter(ET_BURST, MAX_PARTICLES, 0.09f, pe_opt);
+
+    int mouseX = 0;
+    int mouseY = 0;
 
     while (!WindowShouldClose()) {
         float deltaTime = GetFrameTime();
+
+        mouseX = GetMouseX();
+        mouseY = GetMouseY();
+
+        pe.options.positionRange = (Vector3Range) {
+            .lowerBound = (Vector3) {
+                .x = mouseX - 20,
+                .y = mouseY - 20,
+                .z = 0
+            },
+            .upperBound = (Vector3) {
+                .x = mouseX + 20,
+                .y = mouseY + 20,
+                .z = 0
+            }
+        };
+
+        if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+            BurstParticles(&pe);
+        }
+
+        if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
+            KillAllParticles(&pe);
+        }
+
         UpdateParticleEmitter(&pe, deltaTime);
 
         BeginDrawing(); {

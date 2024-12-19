@@ -21,12 +21,10 @@ void particleXdied(Particle* p, Emitter* pg) { /* :( */
 }
 
 void updateXparticle(Particle* p, float deltaTime) {
-    static float ctr = 0.0f;
+    double time = GetTime();
 
-    p->pos.x += sinf(p->vel.x + ctr * deltaTime);
-    p->pos.y += cosf(p->vel.y + ctr * deltaTime);
-
-    ctr += 0.01f;
+    p->pos.x += (sinf(time + deltaTime) - sinf(time)) * p->vel.x;
+    p->pos.y += (cosf(time + deltaTime) - cosf(time)) * p->vel.y;
 }
 
 int main(void) {
@@ -40,12 +38,12 @@ int main(void) {
 
     EmitterOptions pe_opt = {
         .positionRange = (Vector3Range) {
-            .lowerBound = { .x = 400, .y = 200, .z = 0 },
-            .upperBound = { .x = 680, .y = 520, .z = 0 }
+            .lowerBound = { .x = 100, .y = 100, .z = 0 },
+            .upperBound = { .x = 1080, .y = 820, .z = 0 }
         },
         .velocityRange = (Vector3Range) {
-            .lowerBound = { .x = -100.0f, .y = -100.0f, .z = 0 },
-            .upperBound = { .x = 100.0f, .y = 100.0f, .z = 0 }
+            .lowerBound = { .x = -500.0f, .y = -500.0f, .z = 0 },
+            .upperBound = { .x = 500.0f, .y = 500.0f, .z = 0 }
         },
         .lifespanRange = (FloatRange) { .lowerBound = 15.0f, .upperBound = 15.0f },
         .colorRange = (ColorRange) { .lowerBound = RED, .upperBound = BLUE },
@@ -54,7 +52,7 @@ int main(void) {
         .updateFunction = updateXparticle
     };
 
-    Emitter pe = InitParticleEmitter(MAX_PARTICLES, EMITTER_INTERVAL, pe_opt);
+    Emitter pe = InitParticleEmitter(ET_CONSTANT, MAX_PARTICLES, EMITTER_INTERVAL, pe_opt);
 
     while (!WindowShouldClose()) {
         float deltaTime = GetFrameTime();

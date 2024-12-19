@@ -21,6 +21,17 @@ typedef struct Particle Particle;
 typedef struct ColorRange ColorRange;
 typedef struct Vector3Range Vector3Range;
 typedef struct FloatRange FloatRange;
+typedef struct IntRange IntRange;
+
+enum EmitterType {
+    ET_CONSTANT, /* emitter that constantly creates particles at a certain interval       */
+    ET_BURST     /* emitter that burst particles upon calling a BurstParticles() function */
+};
+
+struct IntRange {
+    int lowerBound;
+    int upperBound;
+};
 
 struct FloatRange {
     float lowerBound;
@@ -45,17 +56,20 @@ struct Particle {
     Color color;    /* particle's color       */
 };
 
+
 struct EmitterOptions {
     Vector3Range positionRange;                 /* position range in which particles will spawn randomly     */
     Vector3Range velocityRange;                 /* velocity range which each particle will have              */
     FloatRange lifespanRange;                   /* lifespan range which dictates particle's duration of life */
     ColorRange colorRange;                      /* color range in which a particle may be colored as         */
+    IntRange burstRange;                        /* number range of particles per burst                       */
     void (*drawFunction)(Particle*);            /* called when particle wants to be rendered                 */
     void (*deathFunction)(Particle*, Emitter*); /* called when particle's age is greater than its lifespan   */
-    void (*updateFunction)(Particle*, float);   /* called when particle needs to be updated */
+    void (*updateFunction)(Particle*, float);   /* called when particle needs to be updated                  */
 };
 
 struct Emitter {
+    enum EmitterType type;
     EmitterOptions options;
 
     Particle* particles;
@@ -64,6 +78,10 @@ struct Emitter {
 
     float particleSpawnInterval;
     float timeSinceLastSpawn;
+
+    bool isBurstActive;
+    int burstAmount;
+    int particlesSpawned;
 };
 
 float RandomFloatRange(float min, float max);
@@ -75,9 +93,11 @@ void DefaultParticleDraw(Particle* p);
 void DefaultParticleOnDeath(Particle* p, Emitter* generator);
 void DefaultParticleUpdate(Particle* p, float deltaTime);
 
-Emitter InitParticleEmitter(int maxParticles, float spawnInterval, EmitterOptions pe_opt);
+Emitter InitParticleEmitter(enum EmitterType type, int maxParticles, float spawnInterval, EmitterOptions pe_opt);
 
 void InitParticle(Particle* p, Vector3Range posRange, Vector3Range velRange, FloatRange lifespanRange, ColorRange colorRange);
+
+void BurstParticles(Emitter* emitter);
 
 void UpdateParticleEmitter(Emitter* emitter, float deltaTime);
 void RenderParticles(const Emitter* emitter);
@@ -139,8 +159,10 @@ void DefaultParticleOnDeath(Particle* p, Emitter* emitter) {
 }
 
 
-Emitter InitParticleEmitter(int maxParticles, float spawnInterval, EmitterOptions pe_opt) {
+Emitter InitParticleEmitter(enum EmitterType type, int maxParticles, float spawnInterval, EmitterOptions pe_opt) {
     Emitter emitter = {0};
+
+    emitter.type = type;
     emitter.particles = (Particle*)RL_MALLOC(maxParticles * sizeof(Particle));
     emitter.numParticles = 0;
     emitter.maxNumParticles = maxParticles;
@@ -148,9 +170,12 @@ Emitter InitParticleEmitter(int maxParticles, float spawnInterval, EmitterOption
     emitter.timeSinceLastSpawn = 0.0f;
 
     emitter.options = pe_opt;
-    emitter.options.deathFunction  = (pe_opt.deathFunction) ? pe_opt.deathFunction  : DefaultParticleOnDeath;
-    emitter.options.drawFunction   = (pe_opt.drawFunction)  ? pe_opt.drawFunction   : DefaultParticleDraw;
-    emitter.options.updateFunction =  pe_opt.updateFunction ? pe_opt.updateFunction : DefaultParticleUpdate;
+    emitter.options.deathFunction  = (pe_opt.deathFunction)  ?
+                                      pe_opt.deathFunction   : DefaultParticleOnDeath;
+    emitter.options.drawFunction   = (pe_opt.drawFunction)   ?
+                                      pe_opt.drawFunction    : DefaultParticleDraw;
+    emitter.options.updateFunction = (pe_opt.updateFunction) ?
+                                      pe_opt.updateFunction  : DefaultParticleUpdate;
 
     return emitter;
 }
@@ -173,6 +198,32 @@ void DefaultParticleUpdate(Particle* p, float deltaTime) {
 }
 
 
+/* shouldn't really be called externally. perhaps it's better to inline? */
+void UpdateBurstParticles(Emitter* emitter, float deltaTime) {
+    if (!emitter->isBurstActive) return;
+
+    emitter->timeSinceLastSpawn += deltaTime;
+
+    while (emitter->numParticles < emitter->maxNumParticles &&
+           emitter->particlesSpawned < emitter->burstAmount &&
+           emitter->timeSinceLastSpawn >= emitter->particleSpawnInterval) {
+
+        InitParticle(&emitter->particles[emitter->numParticles++],
+                      emitter->options.positionRange,
+                      emitter->options.velocityRange,
+                      emitter->options.lifespanRange,
+                      emitter->options.colorRange);
+
+        emitter->particlesSpawned++;
+        emitter->timeSinceLastSpawn -= emitter->particleSpawnInterval;
+    }
+
+    if (emitter->particlesSpawned >= emitter->burstAmount) {
+        emitter->isBurstActive = false;
+    }
+}
+
+
 void UpdateParticleEmitter(Emitter* emitter, float deltaTime) {
     emitter->timeSinceLastSpawn += deltaTime;
 
@@ -192,6 +243,12 @@ void UpdateParticleEmitter(Emitter* emitter, float deltaTime) {
         }
     }
 
+    if (emitter->type == ET_BURST) {
+        UpdateBurstParticles(emitter, deltaTime);
+        return; /* the rest is not for us */
+    }
+
+    /* only for CONSTANT particle emitter */
     while (emitter->timeSinceLastSpawn >= emitter->particleSpawnInterval) {
         if (emitter->numParticles < emitter->maxNumParticles) {
             InitParticle(&emitter->particles[emitter->numParticles],
@@ -202,6 +259,31 @@ void UpdateParticleEmitter(Emitter* emitter, float deltaTime) {
             emitter->numParticles++;
         }
         emitter->timeSinceLastSpawn -= emitter->particleSpawnInterval;
+    }
+}
+
+
+void BurstParticles(Emitter* emitter) {
+    if (emitter->type != ET_BURST || emitter->isBurstActive) return;
+
+    emitter->isBurstActive = true;
+    emitter->burstAmount = RandomIntRange(emitter->options.burstRange.lowerBound, emitter->options.burstRange.upperBound);
+    emitter->particlesSpawned = 0;
+    emitter->timeSinceLastSpawn = 0;
+}
+
+
+void KillAllParticles(Emitter* emitter) {
+    /* TODO: perhaps we should also stop the burst if it's active when this function is called? */
+    for (int i = 0; i < emitter->numParticles; i++) {
+        Particle* p = &emitter->particles[i];
+        emitter->options.deathFunction(p, emitter);
+
+        if (i < emitter->numParticles - 1) {
+            emitter->particles[i] = emitter->particles[emitter->numParticles - 1];
+        }
+        emitter->numParticles--;
+        i--;
     }
 }
 

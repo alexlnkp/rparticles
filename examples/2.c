@@ -40,7 +40,7 @@ int main(void) {
         .updateFunction = NULL
     };
 
-    Emitter pe = InitParticleEmitter(MAX_PARTICLES, EMITTER_INTERVAL, pe_opt);
+    Emitter pe = InitParticleEmitter(ET_CONSTANT, MAX_PARTICLES, EMITTER_INTERVAL, pe_opt);
 
     Camera3D cam = {0};
     cam.fovy = 90.0f;
