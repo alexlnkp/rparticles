@@ -40,7 +40,7 @@ int main(void) {
         .updateFunction = NULL
     };
 
-    Emitter pe = InitParticleEmitter(ET_BURST, MAX_PARTICLES, 0.09f, pe_opt);
+    Emitter pe = InitParticleEmitter(ET_BURST, MAX_PARTICLES, 0.01f, pe_opt);
 
     int mouseX = 0;
     int mouseY = 0;

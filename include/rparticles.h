@@ -69,19 +69,24 @@ struct EmitterOptions {
 };
 
 struct Emitter {
-    enum EmitterType type;
-    EmitterOptions options;
+    /*       common fields       */
+    enum EmitterType type;       /* emitter type {ET_CONSTANT, ET_BURST} */
+    EmitterOptions options;      /* emitter options (see `struct EmitterOptions`) */
 
-    Particle* particles;
-    int numParticles;
-    int maxNumParticles;
+    Particle* particles;         /* particle array with size `sizeof(Particle) * maxNumParticles` */
+    int numParticles;            /* number of currently living particles */
+    int maxNumParticles;         /* max amount of living particles allowed */
 
-    float particleSpawnInterval;
-    float timeSinceLastSpawn;
+    float particleSpawnInterval; /* spawn interval for particles. also used for burst */
+    float timeSinceLastSpawn;    /* time since last particle was spawned */
+    /* ------------------------- */
 
-    bool isBurstActive;
-    int burstAmount;
-    int particlesSpawned;
+
+    /* only for Burst-type emitters */
+    bool isBurstActive;             /* is burst currently active?                   */
+    int burstAmount;                /* how many particles will be bursted in total. */
+    int particlesSpawned;           /* how many particles were bursted.             */
+    /* ---------------------------- */
 };
 
 float RandomFloatRange(float min, float max);
@@ -199,10 +204,8 @@ void DefaultParticleUpdate(Particle* p, float deltaTime) {
 
 
 /* shouldn't really be called externally. perhaps it's better to inline? */
-void UpdateBurstParticles(Emitter* emitter, float deltaTime) {
+void UpdateBurstParticles(Emitter* emitter) {
     if (!emitter->isBurstActive) return;
-
-    emitter->timeSinceLastSpawn += deltaTime;
 
     while (emitter->numParticles < emitter->maxNumParticles &&
            emitter->particlesSpawned < emitter->burstAmount &&
@@ -244,7 +247,7 @@ void UpdateParticleEmitter(Emitter* emitter, float deltaTime) {
     }
 
     if (emitter->type == ET_BURST) {
-        UpdateBurstParticles(emitter, deltaTime);
+        UpdateBurstParticles(emitter);
         return; /* the rest is not for us */
     }
 
