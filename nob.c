@@ -5,7 +5,7 @@
 
 #define STR_OR_DEFAULT(str, def) ((str) ? (str) : (def))
 
-#define NUM_EXAMPLES 4
+#define NUM_EXAMPLES 5
 
 #define DEFAULT_CC "gcc"
 
