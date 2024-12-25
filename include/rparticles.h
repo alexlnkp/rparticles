@@ -110,7 +110,7 @@ RPAPI void DefaultParticleDraw(Particle* p);
 RPAPI void DefaultParticleOnDeath(Particle* p, Emitter* generator);
 RPAPI void DefaultParticleUpdate(Particle* p, float deltaTime);
 
-RPAPI Emitter InitParticleEmitter(enum EmitterType type, int maxParticles, float spawnInterval, EmitterOptions pe_opt);
+RPAPI Emitter InitParticleEmitter(enum EmitterType type, int maxParticles, float spawnInterval, EmitterOptions options);
 
 RPAPI void InitParticle(Particle* p, Vector3Range posRange, Vector3Range velRange, FloatRange lifespanRange, ColorRange colorRange);
 
@@ -182,7 +182,7 @@ void DefaultParticleOnDeath(Particle* p, Emitter* emitter) {
 }
 
 
-Emitter InitParticleEmitter(enum EmitterType type, int maxParticles, float spawnInterval, EmitterOptions pe_opt) {
+Emitter InitParticleEmitter(enum EmitterType type, int maxParticles, float spawnInterval, EmitterOptions options) {
     Emitter emitter = {0};
 
     emitter.type = type;
@@ -192,13 +192,13 @@ Emitter InitParticleEmitter(enum EmitterType type, int maxParticles, float spawn
     emitter.particleSpawnInterval = spawnInterval;
     emitter.timeSinceLastSpawn = 0.0f;
 
-    emitter.options = pe_opt;
-    emitter.options.deathFunction  = (pe_opt.deathFunction)  ?
-                                      pe_opt.deathFunction   : DefaultParticleOnDeath;
-    emitter.options.drawFunction   = (pe_opt.drawFunction)   ?
-                                      pe_opt.drawFunction    : DefaultParticleDraw;
-    emitter.options.updateFunction = (pe_opt.updateFunction) ?
-                                      pe_opt.updateFunction  : DefaultParticleUpdate;
+    emitter.options = options;
+    emitter.options.deathFunction  = (options.deathFunction)  ?
+                                      options.deathFunction   : DefaultParticleOnDeath;
+    emitter.options.drawFunction   = (options.drawFunction)   ?
+                                      options.drawFunction    : DefaultParticleDraw;
+    emitter.options.updateFunction = (options.updateFunction) ?
+                                      options.updateFunction  : DefaultParticleUpdate;
 
     return emitter;
 }
