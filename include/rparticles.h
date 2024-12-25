@@ -1,6 +1,14 @@
 #ifndef   __RPARTICLES_H__
 #define   __RPARTICLES_H__
 
+#ifndef   RPAPI
+    #ifdef    RPARTICLES_IMPLEMENTATION
+        #define RPAPI extern inline
+    #else
+        #define RPAPI inline
+    #endif /* RPARTICLES_IMPLEMENTATION */
+#endif /* RPAPI */
+
 #ifndef RAND_FUNCTION
     #include <stdlib.h>
     #define RAND_FUNCTION rand()
@@ -89,52 +97,58 @@ struct Emitter {
     /* ---------------------------- */
 };
 
-float RandomFloatRange(float min, float max);
-int RandomIntRange(int min, int max);
-Color GetRandomColorInRange(ColorRange cr);
-Vector3 GetRandomVector3InRange(Vector3Range v3r);
+RPAPI float RandomFloatInRange(FloatRange fr);
+RPAPI int RandomIntInRange(IntRange ir);
+RPAPI Color GetRandomColorInRange(ColorRange cr);
+RPAPI Vector3 GetRandomVector3InRange(Vector3Range v3r);
 
-void DefaultParticleDraw(Particle* p);
-void DefaultParticleOnDeath(Particle* p, Emitter* generator);
-void DefaultParticleUpdate(Particle* p, float deltaTime);
+RPAPI void DefaultParticleDraw(Particle* p);
+RPAPI void DefaultParticleOnDeath(Particle* p, Emitter* generator);
+RPAPI void DefaultParticleUpdate(Particle* p, float deltaTime);
 
-Emitter InitParticleEmitter(enum EmitterType type, int maxParticles, float spawnInterval, EmitterOptions pe_opt);
+RPAPI Emitter InitParticleEmitter(enum EmitterType type, int maxParticles, float spawnInterval, EmitterOptions pe_opt);
 
-void InitParticle(Particle* p, Vector3Range posRange, Vector3Range velRange, FloatRange lifespanRange, ColorRange colorRange);
+RPAPI void InitParticle(Particle* p, Vector3Range posRange, Vector3Range velRange, FloatRange lifespanRange, ColorRange colorRange);
 
-void BurstParticles(Emitter* emitter);
+RPAPI void BurstParticles(Emitter* emitter);
 
-void UpdateParticleEmitter(Emitter* emitter, float deltaTime);
-void RenderParticles(const Emitter* emitter);
-void DestroyParticleEmitter(Emitter* emitter);
+RPAPI void UpdateParticleEmitter(Emitter* emitter, float deltaTime);
+RPAPI void RenderParticles(const Emitter* emitter);
+RPAPI void DestroyParticleEmitter(Emitter* emitter);
 
 #ifdef    RPARTICLES_IMPLEMENTATION
 
-/* maybe <= and >= better? */
-#define LOWEST_VAL_INRANGE(x, v) (x.lowerBound.v < x.upperBound.v) ? x.lowerBound.v : x.upperBound.v
-#define GREATEST_VAL_INRANGE(x, v) (x.lowerBound.v > x.upperBound.v) ? x.lowerBound.v : x.upperBound.v
+#define MAX(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a > _b ? _a : _b; })
 
-#define GET_COLORVAL_IN_RANGE(x, v) RandomIntRange(LOWEST_VAL_INRANGE(x, v), GREATEST_VAL_INRANGE(x, v))
-#define GET_VECTORVAL_IN_RANGE(x, v) RandomFloatRange(LOWEST_VAL_INRANGE(x, v), GREATEST_VAL_INRANGE(x, v))
+#define MIN(a,b) \
+    ({ __typeof__ (a) _a = (a); \
+        __typeof__ (b) _b = (b); \
+    _a < _b ? _a : _b; })
 
 
-float RandomFloatRange(float min, float max) {
-    float scale = RAND_FUNCTION / (float)MAX_RAND_VAL;
-    return min + scale * (max - min);
+float RandomFloatInRange(FloatRange fr) {
+    float lb = MIN(fr.lowerBound, fr.upperBound);
+    float ub = MAX(fr.lowerBound, fr.upperBound);
+    return lb + (RAND_FUNCTION / (float)MAX_RAND_VAL) * (ub - lb);
 }
 
 
-int RandomIntRange(int min, int max) {
-    return min + RAND_FUNCTION / (RAND_MAX / (max - min + 1) + 1);
+int RandomIntInRange(IntRange ir) {
+    int lb = MIN(ir.lowerBound, ir.upperBound);
+    int ub = MAX(ir.lowerBound, ir.upperBound);
+    return lb + RAND_FUNCTION / (MAX_RAND_VAL / (ub - lb + 1) + 1);
 }
 
 
 Color GetRandomColorInRange(ColorRange cr) {
     Color result = {
-        .r = GET_COLORVAL_IN_RANGE(cr, r),
-        .g = GET_COLORVAL_IN_RANGE(cr, g),
-        .b = GET_COLORVAL_IN_RANGE(cr, b),
-        .a = GET_COLORVAL_IN_RANGE(cr, a)
+        .r = RandomIntInRange((IntRange){ cr.lowerBound.r, cr.upperBound.r }),
+        .g = RandomIntInRange((IntRange){ cr.lowerBound.g, cr.upperBound.g }),
+        .b = RandomIntInRange((IntRange){ cr.lowerBound.b, cr.upperBound.b }),
+        .a = RandomIntInRange((IntRange){ cr.lowerBound.a, cr.upperBound.a })
     };
 
     return result;
@@ -143,9 +157,9 @@ Color GetRandomColorInRange(ColorRange cr) {
 
 Vector3 GetRandomVector3InRange(Vector3Range v3r) {
     Vector3 result = {
-        .x = GET_VECTORVAL_IN_RANGE(v3r, x),
-        .y = GET_VECTORVAL_IN_RANGE(v3r, y),
-        .z = GET_VECTORVAL_IN_RANGE(v3r, z)
+        .x = RandomFloatInRange((FloatRange){ v3r.lowerBound.x, v3r.upperBound.x }),
+        .y = RandomFloatInRange((FloatRange){ v3r.lowerBound.y, v3r.upperBound.y }),
+        .z = RandomFloatInRange((FloatRange){ v3r.lowerBound.z, v3r.upperBound.z })
     };
 
     return result;
@@ -189,7 +203,7 @@ Emitter InitParticleEmitter(enum EmitterType type, int maxParticles, float spawn
 void InitParticle(Particle* p, Vector3Range posRange, Vector3Range velRange, FloatRange lifespanRange, ColorRange colorRange) {
     p->pos = GetRandomVector3InRange(posRange);
     p->vel = GetRandomVector3InRange(velRange);
-    p->lifespan = RandomFloatRange(lifespanRange.lowerBound, lifespanRange.upperBound);
+    p->lifespan = RandomFloatInRange(lifespanRange);
     p->age = 0.0f;
 
     p->color = GetRandomColorInRange(colorRange);
@@ -227,6 +241,21 @@ void UpdateBurstParticles(Emitter* emitter) {
 }
 
 
+void UpdateConstantParticles(Emitter* emitter) {
+    while (emitter->timeSinceLastSpawn >= emitter->particleSpawnInterval) {
+        if (emitter->numParticles < emitter->maxNumParticles) {
+            InitParticle(&emitter->particles[emitter->numParticles],
+                          emitter->options.positionRange,
+                          emitter->options.velocityRange,
+                          emitter->options.lifespanRange,
+                          emitter->options.colorRange);
+            emitter->numParticles++;
+        }
+        emitter->timeSinceLastSpawn -= emitter->particleSpawnInterval;
+    }
+}
+
+
 void UpdateParticleEmitter(Emitter* emitter, float deltaTime) {
     emitter->timeSinceLastSpawn += deltaTime;
 
@@ -246,22 +275,9 @@ void UpdateParticleEmitter(Emitter* emitter, float deltaTime) {
         }
     }
 
-    if (emitter->type == ET_BURST) {
-        UpdateBurstParticles(emitter);
-        return; /* the rest is not for us */
-    }
-
-    /* only for CONSTANT particle emitter */
-    while (emitter->timeSinceLastSpawn >= emitter->particleSpawnInterval) {
-        if (emitter->numParticles < emitter->maxNumParticles) {
-            InitParticle(&emitter->particles[emitter->numParticles],
-                          emitter->options.positionRange,
-                          emitter->options.velocityRange,
-                          emitter->options.lifespanRange,
-                          emitter->options.colorRange);
-            emitter->numParticles++;
-        }
-        emitter->timeSinceLastSpawn -= emitter->particleSpawnInterval;
+    switch (emitter->type) {
+    case ET_BURST:    UpdateBurstParticles(emitter);    break;
+    case ET_CONSTANT: UpdateConstantParticles(emitter); break;
     }
 }
 
@@ -270,7 +286,7 @@ void BurstParticles(Emitter* emitter) {
     if (emitter->type != ET_BURST || emitter->isBurstActive) return;
 
     emitter->isBurstActive = true;
-    emitter->burstAmount = RandomIntRange(emitter->options.burstRange.lowerBound, emitter->options.burstRange.upperBound);
+    emitter->burstAmount = RandomIntInRange(emitter->options.burstRange);
     emitter->particlesSpawned = 0;
     emitter->timeSinceLastSpawn = 0;
 }

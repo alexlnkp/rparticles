@@ -33,7 +33,7 @@ int main(void) {
             .upperBound = { .x = 100.0f, .y = 100.0f, .z = 0 }
         },
         .lifespanRange = (FloatRange) { .lowerBound = 1.5f, .upperBound = 5.0f },
-        .colorRange = (ColorRange) { .lowerBound = RED, .upperBound = BLUE },
+        .colorRange = (ColorRange) { .lowerBound = (Color){ 255, 0, 0, 255 } , .upperBound = (Color){ 0, 0, 0, 255 } },
         .drawFunction = drawXparticle,
         .deathFunction = particleXdied,
         .updateFunction = NULL
