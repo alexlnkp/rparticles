@@ -1,6 +1,10 @@
 #ifndef   __RPARTICLES_H__
 #define   __RPARTICLES_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef   RPAPI
     #ifdef    RPARTICLES_IMPLEMENTATION
         #define RPAPI extern inline
@@ -325,5 +329,9 @@ void DestroyParticleEmitter(Emitter* emitter) {
 }
 
 #endif /* RPARTICLES_IMPLEMENTATION */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __RPARTICLES_H__ */
