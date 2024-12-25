@@ -22,6 +22,11 @@ extern "C" {
     #define MAX_RAND_VAL RAND_MAX
 #endif
 
+#ifndef RP_ASSERT
+    #include <assert.h>
+    #define RP_ASSERT(x) assert((x));
+#endif
+
 /* probably a useless check, but just in case */
 #if !defined(Vector3) || !defined(Color)
     #include <raylib.h>
@@ -187,6 +192,8 @@ Emitter InitParticleEmitter(enum EmitterType type, int maxParticles, float spawn
 
     emitter.type = type;
     emitter.particles = (Particle*)RL_MALLOC(maxParticles * sizeof(Particle));
+    RP_ASSERT(emitter.particles);
+
     emitter.numParticles = 0;
     emitter.maxNumParticles = maxParticles;
     emitter.particleSpawnInterval = spawnInterval;
